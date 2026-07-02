@@ -6,14 +6,17 @@
 # Licensed under the MIT License.
 # ==============================================================================
 
-# --- 装飾の一括管理 ---
-deco_on()  { printf "\e[1;33m"; }
-deco_off() { printf "\e[m"; }
+# --- Shared output styling helpers ---
+deco_on()  { [ -t 1 ] && printf "\e[1;33m"; }
+deco_off() { [ -t 1 ] && printf "\e[m"; }
 echo2()    { deco_on; printf "%s" "$*"; deco_off; printf "\n"; }
 
 _save_memo(){
-  local default_path="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)/memofiles"
-  local path="${MEMOFILES_DIR:-$default_path}"
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || return 1
+  local default_path="$script_dir/memofiles"
+  : "${MEMOFILES_DIR:=$default_path}"
+  local path="$MEMOFILES_DIR"
 
   if ! mkdir -p "$path" 2>/dev/null; then
     echo2 "error: Failed to create directory $path"
@@ -36,7 +39,11 @@ _save_memo(){
   ${EDITOR:-vi} "$memo"
 }
 
-_save_memo "$@"
-status=$?
-unset -f deco_on deco_off echo2 _save_memo
-return "$status"
+_memo_main() {
+  _save_memo "$@"
+  local status=$?
+  unset -f deco_on deco_off echo2 _save_memo _memo_main
+  return "$status"
+}
+
+_memo_main "$@"

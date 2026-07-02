@@ -1,0 +1,5 @@
+df -h --total
+du -sh * | sort -rh | head -20
+free -h
+lsblk -o NAME,SIZE,TYPE,MOUNTPOINT
+uname -a

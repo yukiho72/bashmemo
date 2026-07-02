@@ -1,0 +1,4 @@
+ss -tlnp
+ip -br addr
+curl -s ifconfig.me
+ping -c 3 8.8.8.8

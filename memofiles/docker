@@ -1,0 +1,3 @@
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+docker system df
+docker images --format "{{.Repository}}:{{.Tag}}\t{{.Size}}" | sort

@@ -6,23 +6,26 @@
 # Licensed under the MIT License.
 # ==============================================================================
 
-# 装飾の一括管理
-deco_on()  { printf "\e[1;33m"; }
-deco_off() { printf "\e[m"; }
+# Shared output styling helpers.
+deco_on()  { [ -t 1 ] && printf "\e[1;33m"; }
+deco_off() { [ -t 1 ] && printf "\e[m"; }
 echo2()    { deco_on; printf "%s" "$*"; deco_off; printf "\n"; }
 
 _load_memo(){
-  local default_path="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)/memofiles"
-  local path="${MEMOFILES_DIR:-$default_path}"
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || return 1
+  local default_path="$script_dir/memofiles"
+  : "${MEMOFILES_DIR:=$default_path}"
+  local path="$MEMOFILES_DIR"
   local save_history=true
 
-  # --- オプション解析 (-v: Viewモード) ---
+  # --- Option parsing (-v: view mode, without saving to history) ---
   if [[ "$1" == "-v" ]]; then
     save_history=false
     shift
   fi
 
-  # バリデーション（ディレクトリトラバーサル防止など）
+  # Validate arguments to prevent directory traversal and wildcard expansion.
   for arg in "$@"; do
     if [[ "$arg" == *"/"* ]] || [[ "$arg" == ".." ]] || [[ "$arg" == "." ]]; then
       echo2 "error: Invalid characters in argument."
@@ -34,38 +37,38 @@ _load_memo(){
     fi
   done
 
-# --- ファイルリストの取得 ---
+  # --- Build the matching file list ---
   local files=()
-  local old_nullglob=$(shopt -p nullglob)
+  local old_nullglob
+  old_nullglob=$(shopt -p nullglob)
   shopt -s nullglob
 
   if [ $# -eq 0 ]; then
-    # 1. 引数なし：全リスト表示
+    # 1. No arguments: show all memo files.
     files=( "$path"/* )
   elif [ $# -eq 1 ] && [ -f "$path/$1" ]; then
-    # 2. 完全一致するメモが memofiles 内にある場合は最優先
+    # 2. Exact memo name matches take priority.
     files=( "$path/$1" )
   else
-    # 3. それ以外：引数を「検索ワード」として処理
+    # 3. Otherwise, treat arguments as search prefixes.
     for arg in "$@"; do
-      # memofiles 内でワイルドカード検索
-      files+=( "$path"/$arg* )
+      # Search memo files by prefix inside the memo directory.
+      files+=( "$path"/"$arg"* )
     done
   fi
   eval "$old_nullglob"
 
-  # --- 判定ロジック ---
+  # --- Decide how to display the result ---
   local num_files=${#files[@]}
 
-  if [ $num_files -eq 0 ]; then
-    # 検索に使用した元の引数を表示すると分かりやすいため $* を活用
+  if [ "$num_files" -eq 0 ]; then
+    # Use $* here if you want to show the original search query.
     #echo2 "No memo found matching '$*'."
-    echo2 "No memo found"
-    return
-  elif [ $num_files -eq 1 ]; then
-    # --- 1. 展開モード ---
+    echo2 "No memos yet. Use @@ to create one."
+  elif [ "$num_files" -eq 1 ]; then
+    # --- Single memo mode ---
     local memo="${files[0]}"
-    # ... (既存のファイル読み込み・履歴保存処理) ...
+    # Read non-empty lines, normalize CRLF endings, and optionally save them to history.
     local lines=()
 
     while IFS= read -r raw_line || [ -n "$raw_line" ]; do
@@ -80,10 +83,9 @@ _load_memo(){
     if $save_history; then
       for (( i=${#lines[@]}-1; i>=0; i-- )); do history -s "${lines[$i]}"; done
     fi
-    return
 
   else
-    # --- 2. 検索・一覧表示モード (複数ヒットした場合) ---
+    # --- Search/list mode for multiple matches ---
     local file_names=()
     for f in "${files[@]}"; do file_names+=("${f##*/}"); done
 
@@ -101,9 +103,15 @@ _load_memo(){
       for (( i=${#file_names[@]}-1; i>=0; i-- )); do history -s "@ ${file_names[$i]}"; done
     fi
   fi
+
+  return
 }
 
-_load_memo "$@"
-status=$?
-unset -f deco_on deco_off echo2 _load_memo
-return "$status"
+_memo_main() {
+  _load_memo "$@"
+  local status=$?
+  unset -f deco_on deco_off echo2 _load_memo _memo_main
+  return "$status"
+}
+
+_memo_main "$@"
