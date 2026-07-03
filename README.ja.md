@@ -12,21 +12,45 @@ Bash の履歴に、よく使うコマンドのメモを読み込むための小
 
 ## Setup
 
-`~/.bashrc` などに alias と、必要に応じて環境変数を追加します。
+GitHub からこのリポジトリを取得し、`~/.bashrc` などに alias と、必要に応じて環境変数を追加します。
 
 ```bash
-alias @='source /path/to/bashmemo/load_memo.sh'
-alias @@='source /path/to/bashmemo/save_memo.sh'
-alias @v='source /path/to/bashmemo/load_memo.sh -v'
+# 1. bashmemo を置く場所を作ります。
+mkdir -p ~/src
+cd ~/src
+
+# 2. GitHub からリポジトリを取得します。
+git clone https://github.com/yukiho72/bashmemo.git
+
+# 3. ~/.bashrc に bashmemo の alias を追加します。
+cat >> ~/.bashrc <<'EOF'
+
+# bashmemo
+alias @='source ~/src/bashmemo/load_memo.sh'
+alias @@='source ~/src/bashmemo/save_memo.sh'
+alias @v='source ~/src/bashmemo/load_memo.sh -v'
 
 # 任意: メモファイルの保存先を変更します。
 MEMOFILES_DIR="$HOME/.local/share/bashmemo/memofiles"
 
 # 任意: 使用するエディタを指定します。
 EDITOR=nano
+EOF
+
+# 4. 上の MEMOFILES_DIR を使う場合は、メモ保存先を作ります。
+mkdir -p ~/.local/share/bashmemo/memofiles
+
+# 5. 現在のシェルに ~/.bashrc の設定を反映します。
+source ~/.bashrc
 ```
 
-`/path/to/bashmemo` は、このリポジトリを置いた場所に置き換えてください。
+SSH で取得したい場合は、`git clone` の行を次に置き換えてください。
+
+```bash
+git clone git@github.com:yukiho72/bashmemo.git
+```
+
+`~/src/bashmemo` 以外の場所に置く場合は、alias のパスを置いた場所に合わせて変更してください。
 
 `load_memo.sh` は現在のシェルの履歴にコマンドを追加するため、これらのスクリプトは `source` して使う前提です。
 

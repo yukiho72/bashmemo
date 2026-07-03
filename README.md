@@ -12,21 +12,47 @@ A small Bash memo tool that loads frequently used commands into your Bash histor
 
 ## Setup
 
-Add aliases and optional environment variables to your `~/.bashrc` or another Bash startup file.
+Clone this repository from GitHub, then add aliases and optional environment
+variables to your `~/.bashrc` or another Bash startup file.
 
 ```bash
-alias @='source /path/to/bashmemo/load_memo.sh'
-alias @@='source /path/to/bashmemo/save_memo.sh'
-alias @v='source /path/to/bashmemo/load_memo.sh -v'
+# 1. Choose where to install bashmemo.
+mkdir -p ~/src
+cd ~/src
+
+# 2. Clone the repository from GitHub.
+git clone https://github.com/yukiho72/bashmemo.git
+
+# 3. Add bashmemo aliases to ~/.bashrc.
+cat >> ~/.bashrc <<'EOF'
+
+# bashmemo
+alias @='source ~/src/bashmemo/load_memo.sh'
+alias @@='source ~/src/bashmemo/save_memo.sh'
+alias @v='source ~/src/bashmemo/load_memo.sh -v'
 
 # Optional: change where memo files are stored.
 MEMOFILES_DIR="$HOME/.local/share/bashmemo/memofiles"
 
 # Optional: choose your editor.
 EDITOR=nano
+EOF
+
+# 4. Create the memo directory if you use MEMOFILES_DIR above.
+mkdir -p ~/.local/share/bashmemo/memofiles
+
+# 5. Reload ~/.bashrc in the current shell.
+source ~/.bashrc
 ```
 
-Replace `/path/to/bashmemo` with the directory where you placed this repository.
+If you prefer SSH, replace the `git clone` command with:
+
+```bash
+git clone git@github.com:yukiho72/bashmemo.git
+```
+
+If you install bashmemo somewhere other than `~/src/bashmemo`, update the paths
+in the aliases.
 
 These scripts are intended to be used with `source`, because `load_memo.sh` adds commands to the current shell's history.
 
