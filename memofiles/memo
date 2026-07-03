@@ -1,5 +1,6 @@
 : hello ;: *(*_*)*
 echo "$MEMOFILES_DIR"
 cd "$MEMOFILES_DIR"
+cd "$MEMOFILES_DIR"; cd .. ; ls
 alias
 nano ~/.bashrc
