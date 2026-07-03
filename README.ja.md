@@ -16,8 +16,8 @@ GitHub からこのリポジトリを取得し、`~/.bashrc` などに alias と
 
 ```bash
 # 1. bashmemo を置く場所を作ります。
-mkdir -p ~/src
-cd ~/src
+mkdir -p ~/scripts
+cd ~/scripts
 
 # 2. GitHub からリポジトリを取得します。
 git clone https://github.com/yukiho72/bashmemo.git
@@ -26,9 +26,9 @@ git clone https://github.com/yukiho72/bashmemo.git
 cat >> ~/.bashrc <<'EOF'
 
 # bashmemo
-alias @='source ~/src/bashmemo/load_memo.sh'
-alias @@='source ~/src/bashmemo/save_memo.sh'
-alias @v='source ~/src/bashmemo/load_memo.sh -v'
+alias @='source ~/scripts/bashmemo/load_memo.sh'
+alias @@='source ~/scripts/bashmemo/save_memo.sh'
+alias @v='source ~/scripts/bashmemo/load_memo.sh -v'
 
 # 任意: メモファイルの保存先を変更します。
 MEMOFILES_DIR="$HOME/.local/share/bashmemo/memofiles"
@@ -50,7 +50,7 @@ SSH で取得したい場合は、`git clone` の行を次に置き換えてく�
 git clone git@github.com:yukiho72/bashmemo.git
 ```
 
-`~/src/bashmemo` 以外の場所に置く場合は、alias のパスを置いた場所に合わせて変更してください。
+`~/scripts/bashmemo` 以外の場所に置く場合は、alias のパスを置いた場所に合わせて変更してください。
 
 `load_memo.sh` は現在のシェルの履歴にコマンドを追加するため、これらのスクリプトは `source` して使う前提です。
 

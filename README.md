@@ -17,8 +17,8 @@ variables to your `~/.bashrc` or another Bash startup file.
 
 ```bash
 # 1. Choose where to install bashmemo.
-mkdir -p ~/src
-cd ~/src
+mkdir -p ~/scripts
+cd ~/scripts
 
 # 2. Clone the repository from GitHub.
 git clone https://github.com/yukiho72/bashmemo.git
@@ -27,9 +27,9 @@ git clone https://github.com/yukiho72/bashmemo.git
 cat >> ~/.bashrc <<'EOF'
 
 # bashmemo
-alias @='source ~/src/bashmemo/load_memo.sh'
-alias @@='source ~/src/bashmemo/save_memo.sh'
-alias @v='source ~/src/bashmemo/load_memo.sh -v'
+alias @='source ~/scripts/bashmemo/load_memo.sh'
+alias @@='source ~/scripts/bashmemo/save_memo.sh'
+alias @v='source ~/scripts/bashmemo/load_memo.sh -v'
 
 # Optional: change where memo files are stored.
 MEMOFILES_DIR="$HOME/.local/share/bashmemo/memofiles"
@@ -51,7 +51,7 @@ If you prefer SSH, replace the `git clone` command with:
 git clone git@github.com:yukiho72/bashmemo.git
 ```
 
-If you install bashmemo somewhere other than `~/src/bashmemo`, update the paths
+If you install bashmemo somewhere other than `~/scripts/bashmemo`, update the paths
 in the aliases.
 
 These scripts are intended to be used with `source`, because `load_memo.sh` adds commands to the current shell's history.
