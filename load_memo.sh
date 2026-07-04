@@ -17,6 +17,7 @@ _load_memo(){
   local default_path="$script_dir/memofiles"
   : "${MEMOFILES_DIR:=$default_path}"
   local path="$MEMOFILES_DIR"
+  local load_alias="${BASHMEMO_LOAD_ALIAS:-@}"
   local save_history=true
 
   # --- Option parsing (-v: view mode, without saving to history) ---
@@ -26,7 +27,12 @@ _load_memo(){
   fi
 
   # Validate arguments to prevent directory traversal and wildcard expansion.
+  local arg
   for arg in "$@"; do
+    if [[ "$arg" == -* ]]; then
+      echo2 "error: Invalid option '$arg'. (-v is only accepted as the first argument.)"
+      return 1
+    fi
     if [[ "$arg" == *"/"* ]] || [[ "$arg" == ".." ]] || [[ "$arg" == "." ]]; then
       echo2 "error: Invalid characters in argument."
       return 1
@@ -58,34 +64,59 @@ _load_memo(){
   fi
   eval "$old_nullglob"
 
+  # Keep regular files only, and drop duplicates from overlapping prefixes.
+  local matched=()
+  local candidate known dup
+  for candidate in "${files[@]}"; do
+    [ -f "$candidate" ] || continue
+    dup=false
+    for known in "${matched[@]}"; do
+      [ "$known" = "$candidate" ] && { dup=true; break; }
+    done
+    $dup || matched+=("$candidate")
+  done
+  files=("${matched[@]}")
+
   # --- Decide how to display the result ---
   local num_files=${#files[@]}
+  local i
 
   if [ "$num_files" -eq 0 ]; then
-    # Use $* here if you want to show the original search query.
-    #echo2 "No memo found matching '$*'."
-    echo2 "No memos yet. Use @@ to create one."
+    if [ $# -eq 0 ]; then
+      echo2 "No memos yet. Use @@ to create one."
+    else
+      # The query can be huge when an unquoted glob was expanded by the
+      # calling shell, so cap what is echoed back.
+      local query="$*"
+      [ "${#query}" -gt 40 ] && query="${query:0:40}..."
+      echo2 "No memo matches '$query'. Use $load_alias to list all memos."
+    fi
   elif [ "$num_files" -eq 1 ]; then
     # --- Single memo mode ---
     local memo="${files[0]}"
     # Read non-empty lines, normalize CRLF endings, and optionally save them to history.
     local lines=()
+    local raw_line line
 
     while IFS= read -r raw_line || [ -n "$raw_line" ]; do
-      local line="$raw_line"
-      line="${line%$'\r'}"
+      line="${raw_line%$'\r'}"
       [ -z "$line" ] && continue
       lines+=("$line")
     done < "$memo"
 
+    if [ ${#lines[@]} -eq 0 ]; then
+      echo2 "Memo '${memo##*/}' is empty."
+    fi
+
     for (( i=0; i<${#lines[@]}; i++ )); do echo2 "${lines[$i]}"; done
-    
+
     if $save_history; then
-      for (( i=${#lines[@]}-1; i>=0; i-- )); do history -s "${lines[$i]}"; done
+      for (( i=${#lines[@]}-1; i>=0; i-- )); do builtin history -s -- "${lines[$i]}"; done
     fi
 
   else
     # --- Search/list mode for multiple matches ---
+    local f
     local file_names=()
     for f in "${files[@]}"; do file_names+=("${f##*/}"); done
 
@@ -100,7 +131,7 @@ _load_memo(){
     deco_off
 
     if $save_history; then
-      for (( i=${#file_names[@]}-1; i>=0; i-- )); do history -s "@ ${file_names[$i]}"; done
+      for (( i=${#file_names[@]}-1; i>=0; i-- )); do builtin history -s -- "$load_alias ${file_names[$i]}"; done
     fi
   fi
 

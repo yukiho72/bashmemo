@@ -68,33 +68,63 @@ _save_memo_append_usage() {
 
 _save_memo_is_append_command() {
   local command="$1"
-  [[ "$command" == @+* ]] || [[ "$command" == source\ *save_memo.sh\ -a* ]] || [[ "$command" == source\ *save_memo.sh\ --append* ]]
+  # History keeps the line as typed, so a renamed alias is only recognized
+  # through BASHMEMO_APPEND_ALIAS.
+  [[ "$command" == "${BASHMEMO_APPEND_ALIAS:-@+}"* ]] ||
+    [[ "$command" == source\ *save_memo.sh\ -a* ]] ||
+    [[ "$command" == source\ *save_memo.sh\ --append* ]] ||
+    [[ "$command" == .\ *save_memo.sh\ -a* ]] ||
+    [[ "$command" == .\ *save_memo.sh\ --append* ]]
 }
 
-_save_memo_parse_history_line() {
-  local raw="$1"
-  if [[ "$raw" =~ ^[[:space:]]*([0-9]+)[[:space:]]+(.*)$ ]]; then
-    _memo_history_number="${BASH_REMATCH[1]}"
-    _memo_history_command="${BASH_REMATCH[2]}"
-    return 0
+# Read `history` output from stdin into _memo_hist_nums/_memo_hist_cmds.
+# Entry lines are "%5d%c %s", where %c is '*' once the entry has been edited.
+# Any other line is the continuation of a multi-line entry and is joined to
+# the previous command with a newline.
+_save_memo_read_history() {
+  _memo_hist_nums=()
+  _memo_hist_cmds=()
+  local entry_re='^[[:space:]]*([0-9]+)(\*| )[[:space:]](.*)$'
+  local raw last
+  while IFS= read -r raw; do
+    last=$(( ${#_memo_hist_cmds[@]} - 1 ))
+    if [[ "$raw" =~ $entry_re ]]; then
+      # A continuation line can also look like an entry line. Real entry
+      # numbers are consecutive, so treat anything else as a continuation.
+      if [ "$last" -lt 0 ] || [ "${BASH_REMATCH[1]}" -eq $(( _memo_hist_nums[last] + 1 )) ]; then
+        _memo_hist_nums+=("${BASH_REMATCH[1]}")
+        _memo_hist_cmds+=("${BASH_REMATCH[3]}")
+        continue
+      fi
+    fi
+    if [ "$last" -ge 0 ]; then
+      _memo_hist_cmds[last]+=$'\n'"$raw"
+    fi
+  done
+}
+
+_save_memo_reject_multiline() {
+  local number="$1" command="$2"
+  # Memo files hold one command per line, so multi-line entries cannot be stored.
+  if [[ "$command" == *$'\n'* ]]; then
+    { echo2 "error: Cannot append a multi-line command (history entry $number)."; } >&2
+    return 1
   fi
-  return 1
 }
 
 _save_memo_previous_history() {
-  local raw command=""
-  while IFS= read -r raw; do
-    _save_memo_parse_history_line "$raw" || continue
-    _save_memo_is_append_command "$_memo_history_command" && continue
-    command="$_memo_history_command"
-  done < <(HISTTIMEFORMAT='' history 20)
+  local i
+  _save_memo_read_history < <(HISTTIMEFORMAT='' builtin history 20)
 
-  if [ -z "$command" ]; then
-    { echo2 "error: No previous history entry found."; } >&2
-    return 1
-  fi
+  for (( i=${#_memo_hist_cmds[@]}-1; i>=0; i-- )); do
+    _save_memo_is_append_command "${_memo_hist_cmds[i]}" && continue
+    _save_memo_reject_multiline "${_memo_hist_nums[i]}" "${_memo_hist_cmds[i]}" || return 1
+    printf '%s\n' "${_memo_hist_cmds[i]}"
+    return 0
+  done
 
-  printf '%s\n' "$command"
+  { echo2 "error: No previous history entry found."; } >&2
+  return 1
 }
 
 _save_memo_numbered_history() {
@@ -104,34 +134,32 @@ _save_memo_numbered_history() {
     return 1
   fi
 
-  local raw command histbeg="" last_num="" found=""
-  while IFS= read -r raw; do
-    _save_memo_parse_history_line "$raw" || continue
-    [ -z "$histbeg" ] && histbeg="$_memo_history_number"
-    last_num="$_memo_history_number"
+  _save_memo_read_history < <(HISTTIMEFORMAT='' builtin history)
 
-    if [ "$_memo_history_number" = "$target" ]; then
-      command="$_memo_history_command"
-      found=true
-    fi
-  done < <(HISTTIMEFORMAT='' history)
-
-  if [ -z "$histbeg" ]; then
+  local count=${#_memo_hist_nums[@]}
+  if [ "$count" -eq 0 ]; then
     { echo2 "error: No history entries found."; } >&2
     return 1
   fi
 
+  local histbeg="${_memo_hist_nums[0]}"
+  local last_num="${_memo_hist_nums[count-1]}"
   if [ "$target" -lt "$histbeg" ] || [ "$target" -gt "$last_num" ]; then
-    { echo2 "error: History entry $target out of range (available: ${histbeg:-1} - $last_num)."; } >&2
+    { echo2 "error: History entry $target out of range (available: $histbeg - $last_num)."; } >&2
     return 1
   fi
 
-  if [ -z "$found" ]; then
-    { echo2 "error: History entry $target not found."; } >&2
-    return 1
-  fi
+  local i
+  for (( i=count-1; i>=0; i-- )); do
+    if [ "${_memo_hist_nums[i]}" = "$target" ]; then
+      _save_memo_reject_multiline "$target" "${_memo_hist_cmds[i]}" || return 1
+      printf '%s\n' "${_memo_hist_cmds[i]}"
+      return 0
+    fi
+  done
 
-  printf '%s\n' "$command"
+  { echo2 "error: History entry $target not found."; } >&2
+  return 1
 }
 
 _save_memo_append_line() {
@@ -142,6 +170,11 @@ _save_memo_append_line() {
   if [ -z "$command" ]; then
     echo2 "error: Nothing to append."
     return 1
+  fi
+
+  # Keep the one-command-per-line format even if the file lacks a final newline.
+  if [ -s "$memo" ] && [ -n "$(tail -c 1 "$memo")" ]; then
+    printf '\n' >> "$memo" || return 1
   fi
 
   printf '%s\n' "$command" >> "$memo" || return 1
@@ -177,8 +210,8 @@ _save_memo_append() {
 _memo_main() {
   _save_memo "$@"
   local status=$?
-  unset _memo_history_number _memo_history_command
-  unset -f deco_on deco_off echo2 _save_memo _save_memo_validate_name _save_memo_edit _save_memo_append_usage _save_memo_is_append_command _save_memo_parse_history_line _save_memo_previous_history _save_memo_numbered_history _save_memo_append_line _save_memo_append _memo_main
+  unset _memo_hist_nums _memo_hist_cmds
+  unset -f deco_on deco_off echo2 _save_memo _save_memo_validate_name _save_memo_edit _save_memo_append_usage _save_memo_is_append_command _save_memo_read_history _save_memo_reject_multiline _save_memo_previous_history _save_memo_numbered_history _save_memo_append_line _save_memo_append _memo_main
   return "$status"
 }
 

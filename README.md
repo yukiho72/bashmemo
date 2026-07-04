@@ -86,7 +86,7 @@ Notes:
 
 - The scripts are designed to be run with `source`, and the aliases above do exactly that. A script executed normally runs in a child process and cannot add anything to your current shell's history (see [Under the hood](#under-the-hood)).
 - If you install bashmemo somewhere other than `~/scripts/bashmemo`, adjust the paths in the aliases.
-- `@`, `@@`, `@+`, and `@v` are just alias names. Rename them if you prefer something else.
+- `@`, `@@`, `@+`, and `@v` are just alias names. Rename them if you prefer something else (if you rename `@`, also set the `BASHMEMO_LOAD_ALIAS` environment variable; if you rename `@+`, set `BASHMEMO_APPEND_ALIAS` — see [Environment variables](#environment-variables)).
 
 ### Optional configuration
 
@@ -157,7 +157,7 @@ disk    docker
 - If several match, the candidates are listed and pushed to history as `@ <name>`: press ↑, pick one, press Enter.
 - An exact name always wins: with memos `git` and `github`, `@ git` loads only `git`.
 - Multiple prefixes are allowed: `@ d n` matches `disk`, `docker`, and `net`.
-- If nothing matches, bashmemo prints `No memos yet. Use @@ to create one.`
+- If nothing matches, bashmemo prints `No memo matches '...'`. (When you have no memos at all, `@` prints `No memos yet. Use @@ to create one.`)
 
 ### View without touching history: `@ -v` / `@v`
 
@@ -178,6 +178,12 @@ Use `@+` when the command you want to save is already in your Bash history:
 ```
 
 The target memo is created if it does not exist. Run `history` to see entry numbers.
+
+Notes:
+
+- "The previous entry" is looked up among the last 20 history entries, excluding `@+` invocations themselves.
+- Multi-line commands (e.g. a quoted string containing a newline) cannot be represented in the one-command-per-line memo format, so appending one is an error.
+- If you rename the `@+` alias, set the `BASHMEMO_APPEND_ALIAS` environment variable to the new name (see [Environment variables](#environment-variables)).
 
 ## Command reference
 
@@ -205,6 +211,7 @@ free -h
 - Empty lines are ignored when loading.
 - Windows line endings (CRLF) are handled automatically.
 - Lines go into history exactly as written and are never executed by bashmemo. A line starting with `#` does nothing when run, so it can serve as a label inside a memo.
+- Your Bash history settings apply to the added lines as well: with `HISTCONTROL=ignoredups`, for example, consecutive identical lines are stored only once.
 
 ## Sample memos
 
@@ -224,6 +231,8 @@ The repository ships with a few samples so you can try bashmemo immediately:
 | --- | --- | --- |
 | `MEMOFILES_DIR` | `memofiles/` next to the scripts | Where memo files live. `@@` creates the directory automatically if it is missing. |
 | `EDITOR` | `vi` | Editor launched by `@@`. |
+| `BASHMEMO_APPEND_ALIAS` | `@+` | Alias name of the append feature. When `@+` looks up the previous history entry, entries starting with this name are skipped as its own invocations. Set it if you renamed the alias. |
+| `BASHMEMO_LOAD_ALIAS` | `@` | Alias name of the load feature. Used as the prefix of the candidate commands (`@ <name>`) pushed to history when several memos match. Set it if you renamed the alias. |
 
 Because the scripts run inside your interactive shell (via `source`), setting these in `~/.bashrc` works without `export`.
 
