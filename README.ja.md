@@ -45,6 +45,7 @@ bashmemo がコマンドを勝手に実行することはありません。行�
 | --- | --- |
 | `load_memo.sh` | メモを表示し、コマンドを Bash の履歴へ追加します(`@` として使用)。 |
 | `save_memo.sh` | メモファイルを `$EDITOR` で作成・編集します(`@@` として使用)。 |
+| `append_memo.sh` | Bash の履歴 1 件をメモへ追記します(`@+` として使用)。 |
 | `memofiles/` | メモのデフォルト保存先。サンプルメモ(`git`, `docker`, `disk`, `net`, `memo`)が入っています。 |
 
 ## セットアップ
@@ -65,6 +66,7 @@ cat >> ~/.bashrc <<'EOF'
 # bashmemo
 alias @='source ~/scripts/bashmemo/load_memo.sh'
 alias @@='source ~/scripts/bashmemo/save_memo.sh'
+alias @+='source ~/scripts/bashmemo/append_memo.sh'
 alias @v='source ~/scripts/bashmemo/load_memo.sh -v'
 EOF
 
@@ -85,7 +87,7 @@ git clone git@github.com:yukiho72/bashmemo.git
 
 - スクリプトは `source` で実行する前提で、上記の alias もそうしています。普通に実行したスクリプトは子プロセスとして動くため、現在のシェルの履歴には何も追加できません(詳細は[内部の仕組み](#内部の仕組み))。
 - `~/scripts/bashmemo` 以外の場所に置く場合は、alias のパスを置いた場所に合わせて変更してください。
-- `@`, `@@`, `@v` はただの alias 名です。好みに合わせて変えてかまいません。
+- `@`, `@@`, `@+`, `@v` はただの alias 名です。好みに合わせて変えてかまいません。
 
 ### 任意の設定
 
@@ -167,6 +169,17 @@ disk    docker
 
 内容をちょっと確認したいだけのとき(マウスでコピーしたいときなど)に、履歴を汚さずに済みます。
 
+### エディタを開かずに追記する: `@+`
+
+保存したいコマンドが Bash の履歴にあるときは、`@+` でそのままメモへ追記できます。
+
+```bash
+@+ git      # 直前の履歴を追記
+@+ git 100  # history 100 番の履歴を追記
+```
+
+対象のメモが存在しない場合は自動で作られます。履歴番号は `history` で確認できます。
+
 ## コマンド早見表
 
 | コマンド | 動作 |
@@ -177,6 +190,8 @@ disk    docker
 | `@ -v ...` | 上記と同じ動作を、履歴に何も追加せずに行います。 |
 | `@v ...` | `@ -v ...` の alias。 |
 | `@@ メモ名` | メモを `$EDITOR` で作成・編集します。 |
+| `@+ メモ名` | 直前の履歴をメモへ追記します。 |
+| `@+ メモ名 番号` | 指定した番号の履歴をメモへ追記します。 |
 
 ## メモの書き方
 

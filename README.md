@@ -45,6 +45,7 @@ bashmemo never executes anything on its own. It only displays commands and adds 
 | --- | --- |
 | `load_memo.sh` | Shows memos and adds their commands to Bash history (used as `@`). |
 | `save_memo.sh` | Creates or edits memo files with `$EDITOR` (used as `@@`). |
+| `append_memo.sh` | Appends a Bash history entry to a memo (used as `@+`). |
 | `memofiles/` | Default memo directory, including sample memos (`git`, `docker`, `disk`, `net`, `memo`). |
 
 ## Setup
@@ -65,6 +66,7 @@ cat >> ~/.bashrc <<'EOF'
 # bashmemo
 alias @='source ~/scripts/bashmemo/load_memo.sh'
 alias @@='source ~/scripts/bashmemo/save_memo.sh'
+alias @+='source ~/scripts/bashmemo/append_memo.sh'
 alias @v='source ~/scripts/bashmemo/load_memo.sh -v'
 EOF
 
@@ -85,7 +87,7 @@ Notes:
 
 - The scripts are designed to be run with `source`, and the aliases above do exactly that. A script executed normally runs in a child process and cannot add anything to your current shell's history (see [Under the hood](#under-the-hood)).
 - If you install bashmemo somewhere other than `~/scripts/bashmemo`, adjust the paths in the aliases.
-- `@`, `@@`, and `@v` are just alias names. Rename them if you prefer something else.
+- `@`, `@@`, `@+`, and `@v` are just alias names. Rename them if you prefer something else.
 
 ### Optional configuration
 
@@ -167,6 +169,17 @@ disk    docker
 
 Useful for a quick look (or copying with the mouse) when you don't want to alter your history.
 
+### Append without opening an editor: `@+`
+
+Use `@+` when the command you want to save is already in your Bash history:
+
+```bash
+@+ git      # append the previous history entry
+@+ git 100  # append history entry number 100
+```
+
+The target memo is created if it does not exist. Run `history` to see entry numbers.
+
 ## Command reference
 
 | Command | What it does |
@@ -177,6 +190,8 @@ Useful for a quick look (or copying with the mouse) when you don't want to alter
 | `@ -v ...` | Any of the above, without adding anything to history. |
 | `@v ...` | Alias for `@ -v ...`. |
 | `@@ <name>` | Create or edit a memo with `$EDITOR`. |
+| `@+ <name>` | Append the previous history entry to a memo. |
+| `@+ <name> <number>` | Append a numbered history entry to a memo. |
 
 ## Memo format
 
