@@ -87,7 +87,7 @@ _save_memo_previous_history() {
     _save_memo_parse_history_line "$raw" || continue
     _save_memo_is_append_command "$_memo_history_command" && continue
     command="$_memo_history_command"
-  done < <(HISTTIMEFORMAT= history 20)
+  done < <(HISTTIMEFORMAT='' history 20)
 
   if [ -z "$command" ]; then
     { echo2 "error: No previous history entry found."; } >&2
@@ -114,7 +114,7 @@ _save_memo_numbered_history() {
       command="$_memo_history_command"
       found=true
     fi
-  done < <(HISTTIMEFORMAT= history)
+  done < <(HISTTIMEFORMAT='' history)
 
   if [ -z "$histbeg" ]; then
     { echo2 "error: No history entries found."; } >&2
