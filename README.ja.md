@@ -44,8 +44,7 @@ bashmemo がコマンドを勝手に実行することはありません。行�
 | ファイル | 説明 |
 | --- | --- |
 | `load_memo.sh` | メモを表示し、コマンドを Bash の履歴へ追加します(`@` として使用)。 |
-| `save_memo.sh` | メモファイルを `$EDITOR` で作成・編集します(`@@` として使用)。 |
-| `append_memo.sh` | Bash の履歴 1 件をメモへ追記します(`@+` として使用)。 |
+| `save_memo.sh` | メモファイルを `$EDITOR` で作成・編集し(`@@`)、Bash の履歴 1 件を追記します(`@+`)。 |
 | `memofiles/` | メモのデフォルト保存先。サンプルメモ(`git`, `docker`, `disk`, `net`, `memo`)が入っています。 |
 
 ## セットアップ
@@ -66,7 +65,7 @@ cat >> ~/.bashrc <<'EOF'
 # bashmemo
 alias @='source ~/scripts/bashmemo/load_memo.sh'
 alias @@='source ~/scripts/bashmemo/save_memo.sh'
-alias @+='source ~/scripts/bashmemo/append_memo.sh'
+alias @+='source ~/scripts/bashmemo/save_memo.sh -a'
 alias @v='source ~/scripts/bashmemo/load_memo.sh -v'
 EOF
 

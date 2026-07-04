@@ -44,8 +44,7 @@ bashmemo never executes anything on its own. It only displays commands and adds 
 | File | Description |
 | --- | --- |
 | `load_memo.sh` | Shows memos and adds their commands to Bash history (used as `@`). |
-| `save_memo.sh` | Creates or edits memo files with `$EDITOR` (used as `@@`). |
-| `append_memo.sh` | Appends a Bash history entry to a memo (used as `@+`). |
+| `save_memo.sh` | Creates/edits memo files with `$EDITOR` (`@@`) and appends history entries (`@+`). |
 | `memofiles/` | Default memo directory, including sample memos (`git`, `docker`, `disk`, `net`, `memo`). |
 
 ## Setup
@@ -66,7 +65,7 @@ cat >> ~/.bashrc <<'EOF'
 # bashmemo
 alias @='source ~/scripts/bashmemo/load_memo.sh'
 alias @@='source ~/scripts/bashmemo/save_memo.sh'
-alias @+='source ~/scripts/bashmemo/append_memo.sh'
+alias @+='source ~/scripts/bashmemo/save_memo.sh -a'
 alias @v='source ~/scripts/bashmemo/load_memo.sh -v'
 EOF
 
