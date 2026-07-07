@@ -1,0 +1,20 @@
+# bashmemo usage
+# Create or edit a memo:
+# @@ mymemo
+# Write one command per line, then save and quit your editor.
+# List all memos:
+# @
+# Load a memo and add its commands to history:
+# @ mymemo
+# Search memos by name prefix:
+# @ my
+# View a memo without adding anything to history:
+# @ -v mymemo
+# @v mymemo
+# Append the previous history entry to a memo:
+# @+ mymemo
+# Append a specific history entry number to a memo:
+# @+ mymemo 100
+# Use the Up arrow or Ctrl+R after loading a memo to recall, edit, and run commands.
+# Memo names cannot contain / or wildcards, and cannot start with -.
+# Set MEMOFILES_DIR to store memos outside this repository, and EDITOR to choose the editor used by @@.
